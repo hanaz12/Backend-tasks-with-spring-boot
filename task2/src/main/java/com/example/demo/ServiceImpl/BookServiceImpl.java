@@ -10,6 +10,7 @@ import com.example.demo.Repository.AuthorRepo;
 import com.example.demo.Repository.BookRepo;
 import com.example.demo.Service.BookService;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,18 +19,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class BookServiceImpl implements BookService {
 
-    @Autowired
-    private BookRepo bookRepo;
-    @Autowired
-    private AuthorRepo authorRepo;
-    @Autowired
-    private BookMapper bookMapper;
+    private final BookRepo bookRepo;
+    private final AuthorRepo authorRepo;
+    private final BookMapper bookMapper;
 
-    @Transactional
     @Override
-    public boolean addBook(BookDTO bookDTO, int authorId) throws AuthorNotFoundException, IllegalArgumentException {
+    @Transactional
+    public BookDTO addBook(BookDTO bookDTO, int authorId) throws AuthorNotFoundException, IllegalArgumentException {
         Author author = authorRepo.findById(authorId)
                 .orElseThrow(() -> new AuthorNotFoundException(authorId));
 
@@ -45,75 +44,67 @@ public class BookServiceImpl implements BookService {
         }
 
         Book savedBook = bookRepo.save(book);
-        return savedBook != null && savedBook.getId() > 0;
+        return bookMapper.toDTO(savedBook);
     }
 
     @Override
     public List<BookDTO> getBooksByAuthor(int authorId) {
-        Optional<Author> optionalAuthor = authorRepo.findById(authorId);
 
-        if (!optionalAuthor.isPresent()) {
-            throw new AuthorNotFoundException("Author with ID " + authorId + " not found");
-        }
+        authorRepo.findById(authorId)
+                .orElseThrow(() -> new AuthorNotFoundException(authorId));
 
-        Author author = optionalAuthor.get();
-        List<Book> books = author.getBooks();
 
+        List<Book> books = bookRepo.findByAuthorId(authorId);
 
         return books.stream()
-                .map(book -> bookMapper.toDTO(book))
+                .map(bookMapper::toDTO)
                 .collect(Collectors.toList());
-
-
     }
 
     @Override
     public BookDTO getBookByIdAndAuthorId(int bookId, int authorId) throws BookNotFoundException, AuthorNotFoundException {
-        if (!authorRepo.existsById(authorId)) {
-            throw new AuthorNotFoundException("Author with ID " + authorId + " not found");
-        }
+
+        authorRepo.findById(authorId)
+                .orElseThrow(() -> new AuthorNotFoundException(authorId));
+
 
         Book book = bookRepo.findByIdAndAuthorId(bookId, authorId)
-                .orElseThrow(() -> new BookNotFoundException("Book with ID " + bookId +
-                        " not found for author with ID " + authorId));
+                .orElseThrow(() -> new BookNotFoundException(bookId, authorId));
 
         return bookMapper.toDTO(book);
     }
 
     @Override
+    @Transactional
     public BookDTO updateBookByAuthorId(BookDTO bookDTO, int bookId, int authorId) throws BookNotFoundException, AuthorNotFoundException {
+
         Author author = authorRepo.findById(authorId)
-                .orElseThrow(() -> new AuthorNotFoundException("Author with ID " + authorId + " not found"));
+                .orElseThrow(() -> new AuthorNotFoundException(authorId));
+
 
         Book book = bookRepo.findByIdAndAuthorId(bookId, authorId)
-                .orElseThrow(() -> new BookNotFoundException("Book with ID " + bookId +
-                        " not found for author with ID " + authorId));
+                .orElseThrow(() -> new BookNotFoundException(bookId, authorId));
 
 
         bookMapper.updateBookFromDTO(bookDTO, book);
-        book.setId(bookId);
-        book.setAuthor(author);
+
 
         Book savedBook = bookRepo.save(book);
         return bookMapper.toDTO(savedBook);
     }
 
     @Override
-    public boolean deleteBookByAuthorId(int bookId, int authorId) throws BookNotFoundException, AuthorNotFoundException {
-        if (!authorRepo.existsById(authorId)) {
-            throw new AuthorNotFoundException("Author with ID " + authorId + " not found");
-        }
+    @Transactional
+    public void deleteBookByAuthorId(int bookId, int authorId) throws BookNotFoundException, AuthorNotFoundException {
+
+        authorRepo.findById(authorId)
+                .orElseThrow(() -> new AuthorNotFoundException(authorId));
+
 
         Book book = bookRepo.findByIdAndAuthorId(bookId, authorId)
-                .orElseThrow(() -> new BookNotFoundException("Book with ID " + bookId +
-                        " not found for author with ID " + authorId));
+                .orElseThrow(() -> new BookNotFoundException(bookId, authorId));
 
-        try {
-            bookRepo.delete(book);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+
+        bookRepo.delete(book);
     }
-
 }

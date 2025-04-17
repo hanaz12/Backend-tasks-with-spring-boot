@@ -1,6 +1,7 @@
 package com.example.demo.ServiceImpl;
 
 import com.example.demo.DTO.AuthorDTO;
+import com.example.demo.Exceptions.AuthorNotFoundException;
 import com.example.demo.Mapper.AuthorMapper;
 import com.example.demo.Model.Author;
 import com.example.demo.Repository.AuthorRepo;
@@ -15,71 +16,51 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class AuthorServiceImpl implements AuthorService {
-    @Autowired
-    private AuthorRepo authorRepo;
 
-    @Autowired
-    private AuthorMapper authorMapper;
+    private final AuthorRepo authorRepo;
+    private final AuthorMapper authorMapper;
 
     @Override
     public List<AuthorDTO> getAllAuthors() {
         return authorRepo.findAll().stream()
-                .map(author -> authorMapper.toDTO(author))
+                .map(authorMapper::toDTO)
                 .collect(Collectors.toList());
-
     }
 
     @Override
     @Transactional
-    public boolean saveNewAuthor(AuthorDTO authorDTO) {
-        try{
-            Author newAuthor = authorMapper.toEntity(authorDTO);
-            authorRepo.save(newAuthor);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    public AuthorDTO saveNewAuthor(AuthorDTO authorDTO) {
+        Author newAuthor = authorMapper.toEntity(authorDTO);
+        Author savedAuthor = authorRepo.save(newAuthor);
+        return authorMapper.toDTO(savedAuthor);
     }
 
     @Override
     public AuthorDTO getAuthorById(int id) {
-        Optional<Author> optionalAuthor = authorRepo.findById(id);
-
-        if (optionalAuthor.isPresent()) {
-            Author author = optionalAuthor.get();
-            return authorMapper.toDTO(author);
-        }
-        return null;
+        Author author = authorRepo.findById(id)
+                .orElseThrow(() -> new AuthorNotFoundException(id));
+        return authorMapper.toDTO(author);
     }
 
     @Override
+    @Transactional
     public AuthorDTO updateAuthor(AuthorDTO authorDTO) {
-        Optional<Author> authorOptional = authorRepo.findById(authorDTO.getId());
-        if (authorOptional.isPresent()) {
-            Author oldAuthor = authorOptional.get();
+        Author existingAuthor = authorRepo.findById(authorDTO.getId())
+                .orElseThrow(() -> new AuthorNotFoundException(authorDTO.getId()));
 
-            // استخدام دالة التحديث من AuthorMapper
-            authorMapper.updateAuthorFromDTO(authorDTO, oldAuthor);
-
-            Author savedAuthor = authorRepo.save(oldAuthor);
-            return authorMapper.toDTO(savedAuthor);
-        }
-        return null;
+        authorMapper.updateAuthorFromDTO(authorDTO, existingAuthor);
+        Author savedAuthor = authorRepo.save(existingAuthor);
+        return authorMapper.toDTO(savedAuthor);
     }
 
     @Override
-    public boolean deleteAuthorById(int id) {
-        if (authorRepo.existsById(id)) {
-            try {
-                authorRepo.deleteById(id);
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+    @Transactional
+    public void deleteAuthorById(int id) {
+        if (!authorRepo.existsById(id)) {
+            throw new AuthorNotFoundException(id);
         }
-        return false;
+        authorRepo.deleteById(id);
     }
-
 }
-

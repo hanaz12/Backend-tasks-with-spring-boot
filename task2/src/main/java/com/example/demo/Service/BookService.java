@@ -12,7 +12,7 @@ public interface BookService {
 
 
      @Transactional
-     boolean addBook(BookDTO bookDTO, int authorId) throws AuthorNotFoundException, IllegalArgumentException;
+     BookDTO addBook(BookDTO bookDTO, int authorId) throws AuthorNotFoundException, IllegalArgumentException;
 
      List<BookDTO> getBooksByAuthor(int authorId) throws AuthorNotFoundException;
 
@@ -22,6 +22,6 @@ public interface BookService {
      BookDTO updateBookByAuthorId(BookDTO bookDTO, int bookId, int authorId)
              throws BookNotFoundException, AuthorNotFoundException;
 
-     boolean deleteBookByAuthorId(int bookId, int authorId)
+     void deleteBookByAuthorId(int bookId, int authorId)
              throws BookNotFoundException, AuthorNotFoundException;
 }
