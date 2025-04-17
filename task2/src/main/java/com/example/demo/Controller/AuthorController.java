@@ -105,7 +105,6 @@ public class AuthorController {
         }
     }
 
-    // Update specific book by ID for a specific author
     @PutMapping("/{authorId}/books/{bookId}")
     public ResponseEntity<BookDTO> updateBookByAuthorId(
             @PathVariable("authorId") int authorId,
@@ -122,7 +121,7 @@ public class AuthorController {
         }
     }
 
-    // Delete specific book by ID for a specific author
+ 
     @DeleteMapping("/{authorId}/books/{bookId}")
     public ResponseEntity<?> deleteBookByAuthorId(
             @PathVariable("authorId") int authorId,
