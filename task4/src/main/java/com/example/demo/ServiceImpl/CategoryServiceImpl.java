@@ -26,13 +26,19 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDTO AddCategory(CategoryDTO categoryDTO) {
-    Category categoryParent=categoryRepository
-            .findById(categoryDTO.getParentCategoryId())
-            .orElseThrow(()-> new ParentCategoryNotFoundException(categoryDTO.getParentCategoryId()));
-     Category category=categoryMapper.toEntity(categoryDTO);
-     return categoryMapper.toDto(categoryRepository.save(category));
+        Category category = categoryMapper.toEntity(categoryDTO);
 
 
+        if (categoryDTO.getParentCategoryId() != null) {
+            Category parentCategory = categoryRepository
+                    .findById(categoryDTO.getParentCategoryId())
+                    .orElseThrow(() -> new ParentCategoryNotFoundException(categoryDTO.getParentCategoryId()));
+            category.setParentCategory(parentCategory);
+        } else {
+            category.setParentCategory(null);
+        }
+
+        return categoryMapper.toDTO(categoryRepository.save(category));
     }
 
     @Override
@@ -40,39 +46,51 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository
                 .findAll()
                 .stream()
-                .map(categoryMapper::toDto)
+                .map(categoryMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public CategoryDTO GetCategoryById(int id) {
         Category category=categoryRepository.findById(id).orElseThrow(()-> new CategoryNotFoundException(id));
-        return categoryMapper.toDto(category);
+        return categoryMapper.toDTO(category);
     }
 
     @Override
-    public CategoryDTO UpdateCategory(CategoryDTO categoryDTO , int id) {
-        Category categoryParent=categoryRepository
-                .findById(categoryDTO.getParentCategoryId())
-                .orElseThrow(()-> new ParentCategoryNotFoundException(categoryDTO.getParentCategoryId()));
+    @Transactional
+    public CategoryDTO UpdateCategory(CategoryDTO categoryDTO, int id) {
 
-        Category category=categoryRepository
+        Category category = categoryRepository
                 .findById(id)
-                .orElseThrow(()-> new CategoryNotFoundException(categoryDTO.getParentCategoryId()));
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
-        categoryMapper.updateCategoryFromDTO(categoryDTO,category);
-        return categoryMapper.toDto(categoryRepository.save(category));
+
+        if (categoryDTO.getParentCategoryId() != null) {
+            Category parentCategory = categoryRepository
+                    .findById(categoryDTO.getParentCategoryId())
+                    .orElseThrow(() -> new ParentCategoryNotFoundException(categoryDTO.getParentCategoryId()));
+
+
+            category.setParentCategory(parentCategory);
+        }
+
+
+        categoryMapper.updateCategoryFromDTO(categoryDTO, category);
+
+
+        return categoryMapper.toDTO(categoryRepository.save(category));
     }
 
     @Override
     @Transactional
     public void DeleteCategory(int id) throws SubcategoriesFoundException {
-        Category category=
-        categoryRepository
-                .findById(id).orElseThrow(()-> new CategoryNotFoundException(id));
-        if (!category.getSubCategories() .isEmpty()) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException(id));
+
+        if (!category.getSubCategories().isEmpty()) {
             throw new SubcategoriesFoundException("there are sub categories under this category which can't be removed");
         }
+
         categoryRepository.delete(category);
     }
 }

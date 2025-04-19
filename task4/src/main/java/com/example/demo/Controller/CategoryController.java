@@ -1,6 +1,7 @@
 package com.example.demo.Controller;
 
 import com.example.demo.DTO.CategoryDTO;
+import com.example.demo.Exceptions.SubcategoriesFoundException;
 import com.example.demo.Exceptions.SuccessResponse;
 import com.example.demo.Service.CategoryService;
 import jakarta.validation.Valid;
@@ -16,13 +17,13 @@ import java.util.List;
 @AllArgsConstructor
 public class CategoryController {
     private CategoryService categoryService;
-    @GetMapping({"/",""})
+    @GetMapping
     public ResponseEntity<SuccessResponse> getCategories() {
         List<CategoryDTO> categories=categoryService.GetAllCategories();
         SuccessResponse response=new SuccessResponse("Categories retreived successfully " , HttpStatus.OK.value(),categories);
         return ResponseEntity.ok(response);
     }
-    @PostMapping ({"/",""})
+    @PostMapping
     public ResponseEntity<SuccessResponse> AddCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
        CategoryDTO category=categoryService.AddCategory(categoryDTO);
         SuccessResponse response=new SuccessResponse("Category added successfully " , HttpStatus.OK.value(),category);
@@ -42,7 +43,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<SuccessResponse> deleteCategory(@PathVariable("id") int id) {
+    public ResponseEntity<SuccessResponse> deleteCategory(@PathVariable("id") int id) throws SubcategoriesFoundException {
         categoryService.DeleteCategory(id);
         SuccessResponse response = new SuccessResponse("Category deleted successfully", HttpStatus.OK.value(), null);
         return ResponseEntity.ok(response);
