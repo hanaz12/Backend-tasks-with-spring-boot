@@ -95,10 +95,7 @@ public class AuthorController {
         return ResponseEntity.ok(response);
     }
 
-<<<<<<< HEAD
-=======
- 
->>>>>>> 3fe949d06f80355f923d7b5b6513cbcf28b2c526
+
     @DeleteMapping("/{authorId}/books/{bookId}")
     public ResponseEntity<SuccessResponse> deleteBookByAuthorId(
             @PathVariable("authorId") int authorId,
