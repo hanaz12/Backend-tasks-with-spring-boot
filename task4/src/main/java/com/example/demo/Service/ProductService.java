@@ -20,4 +20,5 @@ public interface ProductService {
 
     ProductDTO getProduct(int id) throws ProductNotFoundException;
 
+
 }
