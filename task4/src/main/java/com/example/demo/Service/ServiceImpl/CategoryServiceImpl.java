@@ -1,4 +1,4 @@
-package com.example.demo.ServiceImpl;
+package com.example.demo.Service.ServiceImpl;
 
 import com.example.demo.DTO.CategoryDTO;
 import com.example.demo.Exceptions.CategoryNotFoundException;
